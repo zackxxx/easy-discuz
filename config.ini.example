@@ -1,0 +1,37 @@
+[APP]
+debug = 1
+concur = 5
+
+[DISCUZ]
+base_url = http://91.p9b.space/
+
+[TUMBLR]
+blog_name = ; # split by ;
+consumer_key =
+consumer_secret =
+token =
+token_secret =
+
+
+[DATABASE]
+driver = MYSQL
+
+[MYSQL]
+host = 127.0.0.1
+database = easy_discuz
+username = root
+password =
+port = 3306
+
+[POSTGRESQL]
+host =
+database =
+username =
+password =
+port =
+
+[SQLITE]
+host =
+database = data/database.db
+username =
+password =

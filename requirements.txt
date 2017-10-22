@@ -1,0 +1,10 @@
+aiohttp
+jinja2
+configparser
+tqdm
+peewee
+beautifulsoup4
+lxml
+aiohttp_cors
+PyMySQL
+python-tumblpy

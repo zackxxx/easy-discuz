@@ -1,0 +1,7 @@
+__pycache__/
+config.py
+data/database.db
+cookies.json
+config.ini
+config.ini.*
+!config.ini.example
