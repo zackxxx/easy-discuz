@@ -9,7 +9,6 @@ from bs4 import BeautifulSoup
 import json
 
 from mycoro import MyCoro
-from config import forum_config
 
 from common import dd, get_config
 from httpcommon import HttpCommon
