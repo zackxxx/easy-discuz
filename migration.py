@@ -115,4 +115,5 @@ if __name__ == '__main__':
                        'author_name': post['author_name'], 'author_id': post['author_id'], 'forum_id': post['forum_id'],
                        'digest': post['digest']})
                 print('save {}, success'.format(post['post_id']))
+        offset += posts.count()
     posts = FromPost.select().offset(offset).limit(limit)
