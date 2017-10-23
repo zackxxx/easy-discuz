@@ -36,7 +36,7 @@ def update_detail_from_database(discuz):
         posts = Post.select().where(Post.photos >> None).offset(offset).limit(step)
         if posts.count() == 0:
             break
-        discuz.get_detail(posts)
+        discuz.get_posts_detail(posts)
         offset += step
         print('offset {}'.format(offset))
 
@@ -67,6 +67,7 @@ if __name__ == '__main__':
 
     if args.get('update'):
         update_detail_from_database(discuz)
+        exit()
 
     if args.get('forum'):
         filter_type = args.get('filter', 'digest')
