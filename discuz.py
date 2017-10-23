@@ -92,8 +92,11 @@ class Discuz(object):
         print('fetch thread {} started!'.format(fid))
 
         with (await self.semaphore):
+            params = {'fid': fid, 'page': page, 'orderby': orderby}
+            if filter:
+                params['filter'] = filter
             content = await HttpCommon.http_get(BOARD_URL,
-                                                params={'fid': fid, 'filter': filter, 'page': page, 'orderby': orderby},
+                                                params=params,
                                                 cookies=self.get_cookies())
             print('fetch thread {} succeed!'.format(fid))
             return parse(content)

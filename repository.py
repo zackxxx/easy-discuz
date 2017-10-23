@@ -102,3 +102,6 @@ class Post(BaseModel):
 
 
 Post.create_table(True)
+
+
+

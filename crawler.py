@@ -75,7 +75,7 @@ if __name__ == '__main__':
     if args.get('forum'):
         filter_type = args.get('filter', 'digest')
         if filter_type == 'all':
-            filter_type = ''
+            filter_type = None
         fids = [
             (args['forum'], args.get('start'), args.get('end'), filter_type),
         ]
