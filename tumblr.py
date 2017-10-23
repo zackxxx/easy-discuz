@@ -1,7 +1,7 @@
 import json
 import tumblpy
 import threading
-import os
+import argparse
 
 from common import dd, get_config
 from repository import Post
@@ -46,25 +46,28 @@ def init_client():
                            get_config('TUMBLR', 'token'), get_config('TUMBLR', 'token_secret'))
 
 
-def reblog(status=0):
+def reblog(status=0, total=1000):
     client = init_client()
     offset = 0
     step = 200
-    posts = Post.select().where(Post.downloaded == status).where(Post.digest == 1).order_by(Post.id.desc()).limit(step)
-    if posts.count() > 0:
-        print('start count {}'.format(len(posts)))
-        # pool = multiprocessing.Pool(multiprocessing.cpu_count())
-        # m = multiprocessing.Manager()
-        # event = m.Event()
-        sem = threading.BoundedSemaphore(20)
-        for post in posts:
-            sem.acquire()
-            t = threading.Thread(target=reblog_a_blog, args=(client, post, sem))
-            t.start()
-        offset += len(posts)
-        print('finish reblog {}'.format(offset))
-    else:
-        print('no post')
+    while total >= offset:
+        posts = Post.select().where(Post.downloaded == status).where(Post.digest == 1).order_by(Post.id.desc()).limit(
+            step)
+        if posts.count() > 0:
+            print('start count {}'.format(len(posts)))
+            # pool = multiprocessing.Pool(multiprocessing.cpu_count())
+            # m = multiprocessing.Manager()
+            # event = m.Event()
+            sem = threading.BoundedSemaphore(20)
+            for post in posts:
+                sem.acquire()
+                t = threading.Thread(target=reblog_a_blog, args=(client, post, sem))
+                t.start()
+            offset += len(posts)
+            print('finish reblog {}'.format(offset))
+        else:
+            print('no post')
+            break
 
 
 def reblog_a_blog(client, post, sem):
@@ -91,6 +94,7 @@ def reblog_a_blog(client, post, sem):
         print(e)
     except Exception as e:
         print(e)
+        return 'end'
     finally:
         sem.release()
 
@@ -136,4 +140,9 @@ def format_discuz_post(post):
 
 
 if __name__ == '__main__':
-    reblog()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-t', '--total', type=int, default=200, help='total reblog count')
+    parser.add_argument('-s', '--status', type=int, default=0, help='blog status, 0: not reblog, 1: succeed, 2: fail')
+    args = vars(parser.parse_args())
+
+    reblog(status=args.get('status'), total=args.get('total'))
