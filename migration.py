@@ -116,4 +116,5 @@ if __name__ == '__main__':
                        'digest': post['digest']})
                 print('save {}, success'.format(post['post_id']))
         offset += posts.count()
-    posts = FromPost.select().offset(offset).limit(limit)
+        print('offset {}'.format(offset))
+        posts = FromPost.select().offset(offset).limit(limit)
