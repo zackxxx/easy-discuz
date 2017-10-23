@@ -1,6 +1,6 @@
 import json
 import tumblpy
-import multiprocessing
+import threading
 import os
 
 from common import dd, get_config
@@ -50,23 +50,24 @@ def reblog(status=0):
     client = init_client()
     offset = 0
     step = 200
-    posts = Post.select().where(Post.downloaded == status).where(Post.digest == 1).order_by(Post.id.desc()).offset(
-        offset).limit(step)
+    posts = Post.select().where(Post.downloaded == status).where(Post.digest == 1).order_by(Post.id.desc()).limit(step)
     if posts.count() > 0:
         print('start count {}'.format(len(posts)))
-        pool = multiprocessing.Pool(multiprocessing.cpu_count())
-        m = multiprocessing.Manager()
-        event = m.Event()
+        # pool = multiprocessing.Pool(multiprocessing.cpu_count())
+        # m = multiprocessing.Manager()
+        # event = m.Event()
+        sem = threading.BoundedSemaphore(20)
         for post in posts:
-            pool.apply_async(reblog_a_blog, (client, post, event))
-        pool.close()
-        pool.join()
-        pool.terminate()
+            sem.acquire()
+            t = threading.Thread(target=reblog_a_blog, args=(client, post, sem))
+            t.start()
+        offset += len(posts)
+        print('finish reblog {}'.format(offset))
     else:
         print('no post')
 
 
-def reblog_a_blog(client, post):
+def reblog_a_blog(client, post, sem):
     try:
         post = {
             'post_id': post.post_id,
@@ -90,6 +91,8 @@ def reblog_a_blog(client, post):
         print(e)
     except Exception as e:
         print(e)
+    finally:
+        sem.release()
 
 
 def format_discuz_post(post):
