@@ -32,9 +32,17 @@ class Error(Exception):
         return self.msg
 
 
-class DiscuzAPI(object):
-    def __init__(self, cookies={}):
-        self.cookies = cookies
+class Discuz(object):
+    def __init__(self, concur_req=10, verbose=False):
+        self.coro = MyCoro()
+        self.loop = asyncio.get_event_loop()
+        self.post_exist = 0
+        self.break_count_post_exist = 5
+        self.verbose = verbose
+        self.semaphore = asyncio.Semaphore(concur_req)
+        self.todo = []
+        self.pending_data = []
+        self.cookies = {}
 
     def set_cookies(self, cookies):
         self.cookies = cookies
@@ -62,57 +70,43 @@ class DiscuzAPI(object):
 
         print('fetch thread {} started!'.format(fid))
 
-        content = await HttpCommon.http_get(BOARD_URL,
-                                            params={'fid': fid, 'filter': filter, 'page': page, 'orderby': orderby},
-                                            cookies=self.get_cookies())
-        print('fetch thread {} succeed!'.format(fid))
-        return parse(content)
+        with (await self.semaphore):
+            content = await HttpCommon.http_get(BOARD_URL,
+                                                params={'fid': fid, 'filter': filter, 'page': page, 'orderby': orderby},
+                                                cookies=self.get_cookies())
+            print('fetch thread {} succeed!'.format(fid))
+            return parse(content)
 
     async def post_detail(self, tid, all=True):
         try:
             print('fetch post {} started!'.format(tid))
+            with (await self.semaphore):
+                content = await HttpCommon.http_get(THREAD_URL, params={'tid': tid},
+                                                    cookies=self.get_cookies())
+                print('fetch post {} succeed!'.format(tid))
+                post_photos = re.findall(photo_reg, content)
+                sub_post_ids = re.findall(re.compile('id="postmessage_([\w\W]*?)"'), content)
+                soup = BeautifulSoup(content, 'lxml')
+                post_content = soup.find(id=('postmessage_' + sub_post_ids[0]))
+                post_desc = post_content.get_text()
 
-            content = await HttpCommon.http_get(THREAD_URL, params={'tid': tid},
-                                                cookies=self.get_cookies())
-            print('fetch post {} succeed!'.format(tid))
-            post_photos = re.findall(photo_reg, content)
-            sub_post_ids = re.findall(re.compile('id="postmessage_([\w\W]*?)"'), content)
-            soup = BeautifulSoup(content, 'lxml')
-            post_content = soup.find(id=('postmessage_' + sub_post_ids[0]))
-            post_desc = post_content.get_text()
+                thread = {
+                    'digest': ('精华' in content) * 1,
+                    'post_id': tid,
+                    'photos': post_photos,
+                    'content': post_content,
+                    'desc': post_desc,
+                    'succeed': True,
+                    'title': re.findall(re.compile('<h1>([\w\W]*?)</h1>'), content)[0]
+                }
 
-            thread = {
-                'digest': ('精华' in content) * 1,
-                'post_id': tid,
-                'photos': post_photos,
-                'content': post_content,
-                'desc': post_desc,
-                'succeed': True,
-                'title': re.findall(re.compile('<h1>([\w\W]*?)</h1>'), content)[0]
-            }
-
-            return thread
+                return thread
         except Exception as e:
             print(e)
             return {
                 'post_id': tid,
                 'succeed': False
             }
-
-
-class Discuz(DiscuzAPI):
-    def __init__(self, concur_req=10, verbose=False):
-        # self = DiscuzAPI()
-        self.coro = MyCoro()
-        self.loop = asyncio.get_event_loop()
-        self.post_exist = 0
-        self.break_count_post_exist = 5
-        self.verbose = verbose
-        self.concur_req = concur_req
-        self.semaphore = asyncio.Semaphore(concur_req)
-        self.todo = []
-        self.pending_data = []
-        self.cookies = {}
 
     def get_lists(self, fid, start_page, end_page, filter='digest', orderby='dateline'):
         desc = '分类 {}, {} 页 到 {} 页'.format(fid, start_page, end_page)
@@ -150,7 +144,8 @@ class Discuz(DiscuzAPI):
             post = Post.get_or_none(post_id=item['post_id'])
             if post is None:
                 post = Post.create(
-                    **{k: item[k] for k in ['post_id', 'title', 'author_id', 'author_name', 'post_time', 'forum_id', 'digest']})
+                    **{k: item[k] for k in
+                       ['post_id', 'title', 'author_id', 'author_name', 'post_time', 'forum_id', 'digest']})
                 print('save! digest post ', post.post_id)
                 items_need_detail.append(item)
             else:
@@ -180,7 +175,8 @@ class Discuz(DiscuzAPI):
             else:
                 item['author_id'] = post.author_id
                 post = Post.create(**{k: item[k] for k in
-                                      ['post_id', 'title', 'content', 'desc', 'author_id', 'author_name', 'post_time', 'digest']})
+                                      ['post_id', 'title', 'content', 'desc', 'author_id', 'author_name', 'post_time',
+                                       'digest']})
                 print('post {} detail created and updated! '.format(post_id))
         else:
             if post:

@@ -38,6 +38,7 @@ def update_detail_from_database(discuz):
             break
 
         discuz.get_posts_detail(posts)
+        print([post['post_id'] for post in posts])
         offset += step
         print('offset {}'.format(offset))
 
