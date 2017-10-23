@@ -42,34 +42,7 @@ class BaseModel(Model):
         return model
 
 
-class Post(BaseModel):
-    class Meta:
-        database = MySQLDatabase('easy91-forum', user='root', host='127.0.0.1', password='secret', port=3306)
-
-    id = IntegerField(primary_key=True)
-    post_id = CharField(null=True, unique=True)
-    title = CharField(null=True, default=0)
-    content = TextField(null=True)
-    desc = TextField(null=True)
-    photos = TextField(null=True)
-    post_time = CharField(null=True)
-    author_name = CharField(null=True)
-    author_id = CharField(null=True)
-    forum_id = CharField(null=True)
-    downloaded = IntegerField(default=0)
-    digest = IntegerField(default=0)
-    created_at = DateTimeField(default=datetime.datetime.utcnow)
-
-    @classmethod
-    def primary_key(cls):
-        return 'post_id'
-
-    @classmethod
-    def primary_key(cls):
-        return 'post_id'
-
-
-class RemotePost(BaseModel):
+class FromPost(BaseModel):
     class Meta:
         database = MySQLDatabase('easy91-forum', user='root', host='127.0.0.1', password='secret', port=3306)
         db_table = 'tmp_post'
@@ -97,21 +70,49 @@ class RemotePost(BaseModel):
         return 'post_id'
 
 
+class ToPost(BaseModel):
+    class Meta:
+        database = MySQLDatabase('easy91-forum', user='root', host='127.0.0.1', password='secret', port=3306)
+        db_table = 'post'
+
+    id = IntegerField(primary_key=True)
+    post_id = CharField(null=True, unique=True)
+    title = CharField(null=True, default=0)
+    content = TextField(null=True)
+    desc = TextField(null=True)
+    photos = TextField(null=True)
+    post_time = CharField(null=True)
+    author_name = CharField(null=True)
+    author_id = CharField(null=True)
+    forum_id = CharField(null=True)
+    downloaded = IntegerField(default=0)
+    digest = IntegerField(default=0)
+    created_at = DateTimeField(default=datetime.datetime.utcnow)
+
+    @classmethod
+    def primary_key(cls):
+        return 'post_id'
+
+    @classmethod
+    def primary_key(cls):
+        return 'post_id'
+
+
 if __name__ == '__main__':
     offset = 0
     limit = 200
-    posts = Post.select().offset(offset).limit(limit)
+    posts = FromPost.select().offset(offset).limit(limit)
     while posts.count() > 0:
         for post in posts:
             try:
-                remote_post = RemotePost.get(RemotePost.post_id == post['post_id'])
+                remote_post = ToPost.get(ToPost.post_id == post['post_id'])
                 print('{} exist, skip'.format(post['post_id']))
-            except RemotePost.DoesNotExist:
+            except ToPost.DoesNotExist:
 
-                remote_post = RemotePost.create(
+                remote_post = ToPost.create(
                     **{'post_id': post['post_id'], 'title': post['title'], 'content': post['content'],
                        'desc': post['desc'], 'photos': post['photos'], 'post_time': post['post_time'],
                        'author_name': post['author_name'], 'author_id': post['author_id'], 'forum_id': post['forum_id'],
                        'digest': post['digest']})
                 print('save {}, success'.format(post['post_id']))
-    posts = Post.select().offset(offset).limit(limit)
+    posts = FromPost.select().offset(offset).limit(limit)
