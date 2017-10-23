@@ -29,16 +29,24 @@ def update_discuz(discuz, fids, with_detail=True):
                 discuz.get_posts_detail(posts)
 
 
+def update_detail_from_database(discuz):
+    offset = 0
+    step = 100
+    while True:
+        posts = Post.select().where(Post.photos >> None).offset(offset).limit(step)
+        if posts.count() == 0:
+            break
+        discuz.get_detail(posts)
+        offset += step
+        print('offset {}'.format(offset))
+
+
 def update_discuz_post(discuz, post_id):
     if post_id:
         post = discuz.get_detail(post_id)
 
 
 if __name__ == '__main__':
-
-
-
-
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--post', help='post id')
     parser.add_argument('-f', '--forum', help='forum id')
@@ -46,6 +54,7 @@ if __name__ == '__main__':
     parser.add_argument('--start', default=1, type=int, help='start page')
     parser.add_argument('--end', default=5, type=int, help='end page')
     parser.add_argument('--filter', default='digest', help='filter page ')
+    parser.add_argument('--update', help='update detail of exist digest posts')
     args = vars(parser.parse_args())
 
     debug = bool(get_config('APP', 'debug') == 1)
@@ -55,6 +64,9 @@ if __name__ == '__main__':
     if args.get('post', None):
         update_discuz_post(discuz, post_id=args['post'])
         exit()
+
+    if args.get('update'):
+        update_detail_from_database(discuz)
 
     if args.get('forum'):
         filter_type = args.get('filter', 'digest')
