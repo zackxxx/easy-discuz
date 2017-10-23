@@ -90,7 +90,6 @@ class DiscuzAPI(object):
                 'succeed': True,
                 'title': re.findall(re.compile('<h1>([\w\W]*?)</h1>'), content)[0]
             }
-            dd(thread)
 
             return thread
         except Exception as e:
