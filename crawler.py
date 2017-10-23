@@ -36,6 +36,7 @@ def update_detail_from_database(discuz):
         posts = Post.select().where(Post.photos >> None).offset(offset).limit(step)
         if posts.count() == 0:
             break
+
         discuz.get_posts_detail(posts)
         offset += step
         print('offset {}'.format(offset))
