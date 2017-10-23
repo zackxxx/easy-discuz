@@ -35,6 +35,10 @@ def update_discuz_post(discuz, post_id):
 
 
 if __name__ == '__main__':
+
+
+
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--post', help='post id')
     parser.add_argument('-f', '--forum', help='forum id')

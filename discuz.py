@@ -24,7 +24,6 @@ THREAD_URL = BASE_URL + 'viewthread.php'
 ATTACHMENT_URL = BASE_URL + 'attachments/%s'
 
 
-
 class Error(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -51,6 +50,7 @@ class DiscuzAPI(object):
             for raw_thread in raw_threads:
                 thread = {
                     'forum_id': int(fid),
+                    'digest': ('精华' in raw_thread[5]) * 1,
                     'post_id': int(raw_thread[0]),
                     'title': raw_thread[4],
                     'author_id': raw_thread[6],
@@ -82,6 +82,7 @@ class DiscuzAPI(object):
             post_desc = post_content.get_text()
 
             thread = {
+                'digest': ('精华' in content) * 1,
                 'post_id': tid,
                 'photos': post_photos,
                 'content': post_content,
@@ -89,6 +90,7 @@ class DiscuzAPI(object):
                 'succeed': True,
                 'title': re.findall(re.compile('<h1>([\w\W]*?)</h1>'), content)[0]
             }
+            dd(thread)
 
             return thread
         except Exception as e:
@@ -149,7 +151,7 @@ class Discuz(DiscuzAPI):
             post = Post.get_or_none(post_id=item['post_id'])
             if post is None:
                 post = Post.create(
-                    **{k: item[k] for k in ['post_id', 'title', 'author_id', 'author_name', 'post_time', 'forum_id']})
+                    **{k: item[k] for k in ['post_id', 'title', 'author_id', 'author_name', 'post_time', 'forum_id', 'digest']})
                 print('save! digest post ', post.post_id)
                 items_need_detail.append(item)
             else:
@@ -179,7 +181,7 @@ class Discuz(DiscuzAPI):
             else:
                 item['author_id'] = post.author_id
                 post = Post.create(**{k: item[k] for k in
-                                      ['post_id', 'title', 'content', 'desc', 'author_id', 'author_name', 'post_time']})
+                                      ['post_id', 'title', 'content', 'desc', 'author_id', 'author_name', 'post_time', 'digest']})
                 print('post {} detail created and updated! '.format(post_id))
         else:
             if post:

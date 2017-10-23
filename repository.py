@@ -89,7 +89,12 @@ class Post(BaseModel):
     author_id = CharField(null=True)
     forum_id = CharField(null=True)
     downloaded = IntegerField(default=0)
+    digest = IntegerField(default=0)
     created_at = DateTimeField(default=datetime.datetime.utcnow)
+
+    @classmethod
+    def primary_key(cls):
+        return 'post_id'
 
     @classmethod
     def primary_key(cls):
