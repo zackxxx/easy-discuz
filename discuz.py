@@ -51,6 +51,26 @@ class Discuz(object):
     def get_cookies(self):
         return self.cookies
 
+    async def login(self):
+        try:
+            login_info = {'username': self.username, 'password': self.password,
+                          'answer': '', 'handlekey': 'ls',
+                          'questionid': '0', 'quickforward': 'yes',
+                          'fastloginfield': 'username'}
+            content = await HttpCommon.http_post(self.urls['login'], params=login_info, encoding=self.encoding)
+            if self.debug:
+                print(content)
+
+            if self.username in content:
+                self.set_cookies(HttpCommon.cookies)
+                return True
+
+            return False
+        except Exception as e:
+            if self.debug:
+                print(e)
+            return None
+
     async def thread_posts(self, fid, page=1, filter='digest', orderby='dateline'):
         def parse(content):
             raw_threads = re.findall(thread_reg, content)
@@ -66,6 +86,7 @@ class Discuz(object):
                     'post_time': raw_thread[9]
                 }
                 threads.append(thread)
+            print('fetch thread count {}'.format(len(threads)))
             return threads
 
         print('fetch thread {} started!'.format(fid))
