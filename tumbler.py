@@ -50,7 +50,8 @@ def reblog(status=0):
     client = init_client()
     offset = 0
     step = 200
-    posts = Post.select().where(Post.downloaded == status).order_by(Post.id.desc()).offset(offset).limit(step)
+    posts = Post.select().where(Post.downloaded == status).where(Post.digest == 1).order_by(Post.id.desc()).offset(
+        offset).limit(step)
     if posts.count() > 0:
         print('start count {}'.format(len(posts)))
         pool = multiprocessing.Pool(multiprocessing.cpu_count())

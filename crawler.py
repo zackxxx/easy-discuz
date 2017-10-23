@@ -30,10 +30,10 @@ def update_discuz(discuz, fids, with_detail=True):
 
 
 def update_detail_from_database(discuz):
-    offset = 0
     step = 100
+    offset = 0
     while True:
-        posts = Post.select().where(Post.photos >> None).offset(offset).limit(step)
+        posts = Post.select().where(Post.photos >> None).limit(step)
         if posts.count() == 0:
             break
 
