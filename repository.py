@@ -65,6 +65,9 @@ class Post(BaseModel):
     def primary_key(cls):
         return 'post_id'
 
+    def get_key(self):
+        return self[self.primary_key()]
+
     @classmethod
     def primary_key(cls):
         return 'post_id'
@@ -74,6 +77,21 @@ class PostRepo(object):
     @staticmethod
     def get_need_detail(limit=100, offset=0):
         return Post.select().where(Post.photos >> None).offset(offset).limit(limit)
+
+    @staticmethod
+    def search(keyword, page=1, per_page=10):
+        data = {}
+        total_count = 0
+        try:
+            query = Post.select().orwhere(Post.title.contains(keyword)).orwhere(
+                Post.author_name.contains(keyword)).orwhere(Post.author_id == keyword).orwhere(Post.post_id == keyword)
+            data = {model.get_key(): model.dicts() for model in query.paginate(page, per_page)}
+            total_count = query.count()
+        except Exception as e:
+            print(e)
+            print('search for {}, found noting!'.format(keyword))
+        finally:
+            return data, total_count
 
     @staticmethod
     def save_posts(thread_items):
