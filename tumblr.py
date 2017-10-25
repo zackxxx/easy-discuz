@@ -105,6 +105,8 @@ def reblog_a_blog(client, post, sem):
             if len(format_post['contents']) > 1:
                 reblog_post['title'] += '【{}】'.format(num + 1)
                 tumblr_posting(client, reblog_post, app.get_config('TUMBLR', 'blog_name'))
+            else:
+                print('skip reblog {}'.format(post['post_id']))
     except TumblrLimitException as e:
         print(e)
     except Exception as e:
