@@ -67,7 +67,8 @@ def reblog(status=0, total=1000, fid=None):
             sem = threading.BoundedSemaphore(20)
             for post in posts:
                 sem.acquire()
-                threading.Thread(target=reblog_a_blog, args=(client, post, sem))
+                t = threading.Thread(target=reblog_a_blog, args=(client, post, sem))
+                t.start()
                 # pool.apply_async(reblog_a_blog, args=(client, post))
             # pool.close()
             # pool.join()
