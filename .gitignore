@@ -5,3 +5,5 @@ cookies.json
 config.ini
 config.ini.*
 !config.ini.example
+.idea/
+.cache/

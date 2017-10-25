@@ -1,0 +1,21 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+
+aiohttp = "*"
+"jinja2" = "*"
+configparser = "*"
+tqdm = "*"
+peewee = "*"
+"beautifulsoup4" = "*"
+lxml = "*"
+"aiohttp-cors" = "*"
+pymysql = "*"
+"python-tumblpy" = "*"
+
+
+[dev-packages]
+pytest = "*"

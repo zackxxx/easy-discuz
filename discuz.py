@@ -2,47 +2,33 @@
 # vim: set fileencoding=utf8
 
 from __future__ import unicode_literals
-
 import re
 import asyncio
 from bs4 import BeautifulSoup
-import json
-
-from mycoro import MyCoro
-
-from common import dd, get_config
+import common
 from httpcommon import HttpCommon
-from repository import Post
-
-thread_reg = re.compile(
-    'normalthread_(?P<post_id>[\w\W]*?)">([\w\W]*?)<span id="thread_([\w\W]*?)"><a([\w\W]*?)">(?P<title>[\w\W]*?)</a>([\w\W]*?)uid=([\w\W]*?)">(?P<author_name>[\w\W]*?)</a>([\w\W]*?)<em>(?P<post_time>[\w\W]*?)</em>')
-photo_reg = re.compile('file="attachments/([\w\W]*?)"')
-
-BASE_URL = get_config('DISCUZ', 'base_url')
-BOARD_URL = BASE_URL + 'forumdisplay.php'
-THREAD_URL = BASE_URL + 'viewthread.php'
-ATTACHMENT_URL = BASE_URL + 'attachments/%s'
-
-
-class Error(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-
-    def __str__(self):
-        return self.msg
+import repository
 
 
 class Discuz(object):
-    def __init__(self, concur_req=10, verbose=False):
-        self.coro = MyCoro()
-        self.loop = asyncio.get_event_loop()
-        self.post_exist = 0
-        self.break_count_post_exist = 5
-        self.verbose = verbose
+    def __init__(self, concur_req=10, debug=False):
+        self.debug = debug
         self.semaphore = asyncio.Semaphore(concur_req)
         self.todo = []
         self.pending_data = []
         self.cookies = {}
+        self.reg = {
+            'thread': re.compile(
+                'normalthread_(?P<post_id>[\w\W]*?)">([\w\W]*?)<span id="thread_([\w\W]*?)"><a([\w\W]*?)">(?P<title>[\w\W]*?)</a>([\w\W]*?)uid=([\w\W]*?)">(?P<author_name>[\w\W]*?)</a>([\w\W]*?)<em>(?P<post_time>[\w\W]*?)</em>'),
+            'photo': re.compile('file="attachments/([\w\W]*?)"')
+        }
+        self.base_url = common.get_config('DISCUZ', 'base_url')
+        self.urls = {
+            'base': self.base_url,
+            'board': self.base_url + 'forumdisplay.php',
+            'thread': self.base_url + 'viewthread.php',
+            'attachment': self.base_url + 'attachments/%s',
+        }
 
     def set_cookies(self, cookies):
         self.cookies = cookies
@@ -71,9 +57,9 @@ class Discuz(object):
                 print(e)
             return None
 
-    async def thread_posts(self, fid, page=1, filter='digest', orderby='dateline'):
+    async def request_thread(self, fid, page=1, filter='digest', orderby='dateline'):
         def parse(content):
-            raw_threads = re.findall(thread_reg, content)
+            raw_threads = re.findall(self.reg['thread'], content)
             threads = []
             for raw_thread in raw_threads:
                 thread = {
@@ -95,20 +81,20 @@ class Discuz(object):
             params = {'fid': fid, 'page': page, 'orderby': orderby}
             if filter:
                 params['filter'] = filter
-            content = await HttpCommon.http_get(BOARD_URL,
+            content = await HttpCommon.http_get(self.urls['board'],
                                                 params=params,
                                                 cookies=self.get_cookies())
             print('fetch thread {} succeed!'.format(fid))
             return parse(content)
 
-    async def post_detail(self, tid, all=True):
+    async def request_post(self, post_id):
         try:
-            print('fetch post {} started!'.format(tid))
+            print('fetch post {} started!'.format(post_id))
             with (await self.semaphore):
-                content = await HttpCommon.http_get(THREAD_URL, params={'tid': tid},
+                content = await HttpCommon.http_get(self.urls['thread'], params={'tid': post_id},
                                                     cookies=self.get_cookies())
-                print('fetch post {} succeed!'.format(tid))
-                post_photos = re.findall(photo_reg, content)
+                print('fetch post {} succeed!'.format(post_id))
+                post_photos = re.findall(self.reg['photo'], content)
                 sub_post_ids = re.findall(re.compile('id="postmessage_([\w\W]*?)"'), content)
                 soup = BeautifulSoup(content, 'lxml')
                 post_content = soup.find(id=('postmessage_' + sub_post_ids[0]))
@@ -116,7 +102,7 @@ class Discuz(object):
 
                 thread = {
                     'digest': ('精华' in content) * 1,
-                    'post_id': tid,
+                    'post_id': post_id,
                     'photos': post_photos,
                     'content': post_content,
                     'desc': post_desc,
@@ -128,83 +114,24 @@ class Discuz(object):
         except Exception as e:
             print(e)
             return {
-                'post_id': tid,
+                'post_id': post_id,
                 'succeed': False
             }
 
-    def get_lists(self, fid, start_page, end_page, filter='digest', orderby='dateline'):
-        desc = '分类 {}, {} 页 到 {} 页'.format(fid, start_page, end_page)
-        items_need_detail = self.coro.set_todo(
-            [self.thread_posts(fid, page, filter, orderby) for page in range(start_page, end_page + 1)]).run(
-            desc, self.save_posts)
-        return items_need_detail
+    def get_posts_list(self, fid, start_page, end_page, filter='digest', orderby='dateline'):
+        print('分类 {}, {} 页 到 {} 页'.format(fid, start_page, end_page))
+        posts_need_detail = common.run_futures(
+            [self.request_thread(fid, page, filter, orderby) for page in range(start_page, end_page + 1)],
+            repository.PostRepo.save_posts)
 
-    def get_posts_detail(self, posts):
-        desc = '详情'
+        return posts_need_detail
+
+    def get_posts(self, posts):
         if posts is not None:
-            details = self.coro.set_todo([self.post_detail(post['post_id']) for post in posts]).run(desc,
-                                                                                                    self.save_post_detail)
+            details = common.run_futures([self.request_post(post['post_id']) for post in posts],
+                                         repository.PostRepo.save_post_detail)
             return details
 
-    def get_detail(self, tid):
-        detail = self.coro.set_todo([self.post_detail(tid)]).run('', self.save_post_detail)
+    def get_post(self, tid):
+        detail = common.run_futures([self.request_post(tid)], repository.PostRepo.save_post_detail)
         return detail
-
-    @staticmethod
-    def trans_lists_to_dict(l):
-        data = {}
-        for dic in l:
-            data.update(dic)
-
-        return data
-
-    def save_posts(self, thread_items):
-        if not thread_items or len(thread_items) <= 0:
-            self.post_exist = self.break_count_post_exist + 1
-            return None
-
-        items_need_detail = []
-        for key, item in enumerate(thread_items):
-            post = Post.get_or_none(post_id=item['post_id'])
-            if post is None:
-                post = Post.create(
-                    **{k: item[k] for k in
-                       ['post_id', 'title', 'author_id', 'author_name', 'post_time', 'forum_id', 'digest']})
-                print('save! digest post ', post.post_id)
-                items_need_detail.append(item)
-            else:
-                print('skip! digest post ', item['post_id'])
-                self.post_exist += 1
-                if not post.photos:
-                    items_need_detail.append(item)
-        print('Exist digest count {}, Need detail posts count {}'.format(self.post_exist,
-                                                                         len(items_need_detail)))
-        return items_need_detail
-
-    @staticmethod
-    def save_post_detail(item):
-        post_id = item['post_id']
-        post = Post.get_or_none(post_id=post_id)
-
-        if item['succeed']:
-            if post:
-                if not post.photos or (len(json.loads(post.photos)) < len(item['photos'])):
-                    post.content = str(item['content'])
-                    post.desc = item['desc']
-                    post.photos = json.dumps(item['photos'])
-                    post.save()
-                    print('post {} detail updated ! '.format(post_id))
-                else:
-                    print('post {} detail exist, noting to update !'.format(post_id))
-            else:
-                item['author_id'] = post.author_id
-                post = Post.create(**{k: item[k] for k in
-                                      ['post_id', 'title', 'content', 'desc', 'author_id', 'author_name', 'post_time',
-                                       'digest']})
-                print('post {} detail created and updated! '.format(post_id))
-        else:
-            if post:
-                print('post {} detail fetch fail!'.format(post_id))
-                post.photos = json.dumps([])
-                post.save()
-        return post

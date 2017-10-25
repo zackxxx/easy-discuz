@@ -61,33 +61,35 @@ class HttpCommon:
     @classmethod
     async def http_get(cls, url, params=None, headers=None, cookies=None, encoding=None):
         return await cls._request(cls, url, method='get', params=params, headers=headers, cookies=cookies,
-                                  encoding=encoding)
+                                  encoding=encoding, debug=False)
 
     @classmethod
     async def http_post(cls, url, params=None, headers=None, cookies=None, encoding=None):
         return await cls._request(cls, url, method='post', params=params, headers=headers, cookies=cookies,
-                                  encoding=encoding)
+                                  encoding=encoding, debug=False)
 
     @staticmethod
-    async def _request(cls, url, method='GET', params=None, headers=None, cookies=None, encoding=None):
+    async def _request(cls, url, method='GET', params=None, headers=None, cookies=None, encoding=None, debug=False):
         params = params or {}
         method = method.lower()
-        # if len(cookies) == 0:
-        #     headers = headers or cls.get_header()
+        headers = headers or cls.get_header()
         cookies = cookies or cls.cookies
         encoding = encoding or ('utf-8', 'backslashreplace')
+
         if method not in ('get', 'post'):
             raise web.HTTPError('Method must be of GET or POST')
         async with aiohttp.ClientSession(cookies=cookies) as session:
             request_call = getattr(session, method)
             async with request_call(url, params=params, headers=headers, timeout=30) as res:
+                if debug:
+                    print(
+                        'HTTP {} {} {} with params {} and headers {}'.format(method, res.status, url, params, headers))
                 if res.status == 200:
                     ctype = res.headers.get('Content-type', '').lower()
                     if 'json' in ctype or url.endswith('json'):
                         data = await res.json()
                     else:
                         data = await res.text(*encoding)
-
                     return data
                 elif res.status == 404:
                     raise web.HTTPNotFound()
