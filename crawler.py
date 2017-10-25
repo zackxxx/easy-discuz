@@ -84,8 +84,6 @@ if __name__ == '__main__':
 
     crawler = DiscuzCrawler(int(app.get_config('APP', 'concur')), debug)
 
-    temp_test(crawler)
-
     if args.get('post', None):
         crawler.update_discuz_post(post_id=args['post'])
         exit()

@@ -51,6 +51,8 @@ def reblog(status=0, total=1000):
     client = init_client()
     offset = 0
     step = 200
+    if total < step:
+        step = total
     while total >= offset:
         posts = Post.select().where(Post.downloaded == status).where(Post.digest == 1).order_by(Post.id.desc()).limit(
             step)
@@ -78,7 +80,7 @@ def reblog_a_blog(client, post):
         if post.photos is None:
             print('skip, blog {} has no detail'.format(post['post_id']))
             return None
-    
+
         post = {
             'post_id': post.post_id,
             'title': post.title,
