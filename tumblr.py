@@ -1,8 +1,8 @@
 import json
 import tumblpy
-# import threading
-import multiprocessing
-import multiprocessing.pool
+import threading
+# import multiprocessing
+# import multiprocessing.pool
 import argparse
 
 import app
@@ -61,14 +61,16 @@ def reblog(status=0, total=1000, fid=None):
 
         if posts.count() > 0:
             print('start count {}'.format(len(posts)))
-            pool = multiprocessing.pool.ThreadPool(20)
+            # pool = multiprocessing.pool.ThreadPool(20)
             # m = multiprocessing.Manager()
             # event = m.Event()
-            # sem = threading.BoundedSemaphore(20)
+            sem = threading.BoundedSemaphore(20)
             for post in posts:
-                pool.apply_async(reblog_a_blog, args=(client, post))
-            pool.close()
-            pool.join()
+                sem.acquire()
+                threading.Thread(target=reblog_a_blog, args=(client, post, sem))
+                # pool.apply_async(reblog_a_blog, args=(client, post))
+            # pool.close()
+            # pool.join()
             offset += len(posts)
             print('finish reblog {}'.format(offset))
         else:
@@ -76,7 +78,7 @@ def reblog(status=0, total=1000, fid=None):
             break
 
 
-def reblog_a_blog(client, post):
+def reblog_a_blog(client, post, sem):
     try:
         print('reblog start {}'.format(post.post_id))
 
@@ -109,8 +111,7 @@ def reblog_a_blog(client, post):
         print('reblog fail for {}'.format(post['post_id']))
         return 'end'
     finally:
-        pass
-        # sem.release()
+        sem.release()
 
 
 def format_discuz_post(post):
