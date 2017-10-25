@@ -47,15 +47,18 @@ def init_client():
                            app.get_config('TUMBLR', 'token'), app.get_config('TUMBLR', 'token_secret'))
 
 
-def reblog(status=0, total=1000):
+def reblog(status=0, total=1000, fid=None):
     client = init_client()
     offset = 0
     step = 200
     if total < step:
         step = total
     while total >= offset:
-        posts = Post.select().where(Post.downloaded == status).where(Post.digest == 1).order_by(Post.id.desc()).limit(
-            step)
+        query = Post.select().where(Post.downloaded == status).where(Post.digest == 1).order_by(Post.id.desc())
+        if fid:
+            query = query.where(Post.forum_id == fid)
+        posts = query.limit(step)
+
         if posts.count() > 0:
             print('start count {}'.format(len(posts)))
             pool = multiprocessing.pool.ThreadPool(20)
@@ -153,7 +156,8 @@ def format_discuz_post(post):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--total', type=int, default=200, help='total reblog count')
+    parser.add_argument('-f', '--forum', help='forum id')
     parser.add_argument('-s', '--status', type=int, default=0, help='blog status, 0: not reblog, 1: succeed, 2: fail')
     args = vars(parser.parse_args())
 
-    reblog(status=args.get('status'), total=args.get('total'))
+    reblog(status=args.get('status'), total=args.get('total'), fid=args.get('forum'))
