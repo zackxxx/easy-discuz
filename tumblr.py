@@ -95,6 +95,7 @@ def reblog_a_blog(client, post, sem):
             'photos': json.loads(post.photos),
         }
         format_post = format_discuz_post(post)
+        print(format_post)
         if format_post is None:
             print('skip reblog {}'.format(post['post_id']))
             return None
