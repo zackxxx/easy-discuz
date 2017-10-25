@@ -101,7 +101,7 @@ def reblog_a_blog(client, post):
             reblog_post['desc'] = desc
             if len(format_post['contents']) > 1:
                 reblog_post['title'] += '【{}】'.format(num + 1)
-                # tumblr_posting(client, reblog_post, app.get_config('TUMBLR', 'blog_name'))
+                tumblr_posting(client, reblog_post, app.get_config('TUMBLR', 'blog_name'))
     except TumblrLimitException as e:
         print(e)
     except Exception as e:
