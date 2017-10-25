@@ -22,7 +22,6 @@ def tumblr_posting(client, discuz_post, my_blog):
         if discuz_post is None:
             return None
 
-        print('reblog start {}'.format(discuz_post['post_id']))
         post = {
             'type': 'text',
             'native_inline_images': True,
@@ -57,12 +56,14 @@ def reblog(status=0, total=1000):
             step)
         if posts.count() > 0:
             print('start count {}'.format(len(posts)))
-            pool = multiprocessing.pool.ThreadPool(multiprocessing.cpu_count())
+            pool = multiprocessing.pool.ThreadPool(20)
             # m = multiprocessing.Manager()
             # event = m.Event()
             # sem = threading.BoundedSemaphore(20)
             for post in posts:
                 pool.apply_async(reblog_a_blog, args=(client, post))
+            pool.close()
+            pool.join()
             offset += len(posts)
             print('finish reblog {}'.format(offset))
         else:
@@ -72,6 +73,12 @@ def reblog(status=0, total=1000):
 
 def reblog_a_blog(client, post):
     try:
+        print('reblog start {}'.format(post.post_id))
+
+        if post.photos is None:
+            print('skip, blog {} has no detail'.format(post['post_id']))
+            return None
+    
         post = {
             'post_id': post.post_id,
             'title': post.title,
@@ -89,11 +96,12 @@ def reblog_a_blog(client, post):
             reblog_post['desc'] = desc
             if len(format_post['contents']) > 1:
                 reblog_post['title'] += '【{}】'.format(num + 1)
-            tumblr_posting(client, reblog_post, app.get_config('TUMBLR', 'blog_name'))
+                # tumblr_posting(client, reblog_post, app.get_config('TUMBLR', 'blog_name'))
     except TumblrLimitException as e:
         print(e)
     except Exception as e:
         print(e)
+        print('reblog fail for {}'.format(post['post_id']))
         return 'end'
     finally:
         pass
