@@ -26,11 +26,11 @@ class DiscuzCrawler(object):
                 for posts in threads_posts:
                     self.discuz.get_posts(posts)
 
-    def update_detail_from_database(self):
+    def update_detail_from_database(self, fid=None):
         step = 100
         offset = 0
         while True:
-            posts = repository.PostRepo.get_need_detail(step)
+            posts = repository.PostRepo.get_need_detail(step, 0, fid)
             if posts.count() == 0:
                 break
             self.get_posts(posts)
@@ -89,7 +89,7 @@ if __name__ == '__main__':
         exit()
 
     if args.get('update'):
-        crawler.update_detail_from_database()
+        crawler.update_detail_from_database(args.get('forum'))
         exit()
 
     if args.get('forum'):

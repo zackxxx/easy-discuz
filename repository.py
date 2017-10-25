@@ -75,8 +75,11 @@ class Post(BaseModel):
 
 class PostRepo(object):
     @staticmethod
-    def get_need_detail(limit=100, offset=0):
-        return Post.select().where(Post.photos >> None).offset(offset).limit(limit)
+    def get_need_detail(limit=100, offset=0, fid=None):
+        query = Post.select().where(Post.photos >> None)
+        if fid:
+            query.where(Post.forum_id == fid)
+        return query.offset(offset).limit(limit)
 
     @staticmethod
     def search(keyword, page=1, per_page=10):
