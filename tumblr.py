@@ -3,7 +3,7 @@ import tumblpy
 import threading
 import argparse
 
-from common import dd, get_config
+import app
 from repository import Post
 
 
@@ -42,8 +42,8 @@ def tumblr_posting(client, discuz_post, my_blog):
 
 
 def init_client():
-    return tumblpy.Tumblpy(get_config('TUMBLR', 'consumer_key'), get_config('TUMBLR', 'consumer_secret'),
-                           get_config('TUMBLR', 'token'), get_config('TUMBLR', 'token_secret'))
+    return tumblpy.Tumblpy(app.get_config('TUMBLR', 'consumer_key'), app.get_config('TUMBLR', 'consumer_secret'),
+                           app.get_config('TUMBLR', 'token'), app.get_config('TUMBLR', 'token_secret'))
 
 
 def reblog(status=0, total=1000):
@@ -89,7 +89,7 @@ def reblog_a_blog(client, post, sem):
             reblog_post['desc'] = desc
             if len(format_post['contents']) > 1:
                 reblog_post['title'] += '【{}】'.format(num + 1)
-            tumblr_posting(client, reblog_post, get_config('TUMBLR', 'blog_name'))
+            tumblr_posting(client, reblog_post, app.get_config('TUMBLR', 'blog_name'))
     except TumblrLimitException as e:
         print(e)
     except Exception as e:
@@ -133,7 +133,7 @@ def format_discuz_post(post):
                 desc += split_name
 
     post['desc'] = desc.format(
-        *('<img src="{}">'.format(get_config('DISCUZ', 'base_url') + 'attachments/%s' % photo_id) for photo_id in
+        *('<img src="{}">'.format(app.get_config('DISCUZ', 'base_url') + 'attachments/%s' % photo_id) for photo_id in
           post['photos']))
     post['contents'] = post['desc'].split(split_name)
     return post
