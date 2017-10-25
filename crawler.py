@@ -33,7 +33,7 @@ class DiscuzCrawler(object):
             posts = repository.PostRepo.get_need_detail(step)
             if posts.count() == 0:
                 break
-            self.discuz.get_posts(posts)
+            self.get_posts(posts)
             print([post['post_id'] for post in posts])
             offset += step
             print('offset {}'.format(offset))
