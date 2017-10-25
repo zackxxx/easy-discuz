@@ -9,6 +9,9 @@ import sys
 import config.log
 
 
+
+
+
 class Error(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -60,8 +63,8 @@ def run_futures(todo, handler=None, handler_args=None):
     return data
 
 
-def logger():
-    return config.log.logging.getLogger()
+def logger(name):
+    return config.log.logging.getLogger(name)
 
 
 def init_db():

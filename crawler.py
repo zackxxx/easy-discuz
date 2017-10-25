@@ -21,7 +21,7 @@ class DiscuzCrawler(object):
         for fid_info in fids:
             if fid_info[0] in [19, 21]:
                 self.discuz.set_cookies({})
-            threads_posts = self.discuz.get_posts_list(*fid_info)
+            threads_posts = self.get_posts_list(*fid_info)
             if with_detail:
                 for posts in threads_posts:
                     self.discuz.get_posts(posts)
@@ -32,12 +32,12 @@ class DiscuzCrawler(object):
         while True:
             posts = repository.PostRepo.get_need_detail(step, 0, fid)
             if posts.count() == 0:
-                print('noting to update !')
+                app.logger().info('noting to update !')
                 break
             self.get_posts(posts)
-            print([post['post_id'] for post in posts])
+            app.logger(__name__).info([post['post_id'] for post in posts])
             offset += step
-            print('offset {}'.format(offset))
+            app.logger(__name__).info('offset {}'.format(offset))
 
     def update_discuz_post(self, post_id):
         if post_id:
@@ -45,7 +45,7 @@ class DiscuzCrawler(object):
         return None
 
     def get_posts_list(self, fid, start_page, end_page, filter='digest', orderby='dateline'):
-        print('分类 {}, {} 页 到 {} 页'.format(fid, start_page, end_page))
+        app.logger(__name__).info('分类 {}, {} 页 到 {} 页'.format(fid, start_page, end_page))
         posts_need_detail = app.run_futures(
             [self.discuz.request_thread(fid, page, filter, orderby) for page in range(start_page, end_page + 1)],
             repository.PostRepo.save_posts)
