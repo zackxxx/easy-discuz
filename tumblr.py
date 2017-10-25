@@ -95,7 +95,6 @@ def reblog_a_blog(client, post, sem):
             'photos': json.loads(post.photos),
         }
         format_post = format_discuz_post(post)
-        print(format_post)
         if format_post is None:
             print('skip reblog {}'.format(post['post_id']))
             return None
@@ -105,9 +104,7 @@ def reblog_a_blog(client, post, sem):
             reblog_post['desc'] = desc
             if len(format_post['contents']) > 1:
                 reblog_post['title'] += '【{}】'.format(num + 1)
-                tumblr_posting(client, reblog_post, app.get_config('TUMBLR', 'blog_name'))
-            else:
-                print('skip reblog {}'.format(post['post_id']))
+            tumblr_posting(client, reblog_post, app.get_config('TUMBLR', 'blog_name'))
     except TumblrLimitException as e:
         print(e)
     except Exception as e:
