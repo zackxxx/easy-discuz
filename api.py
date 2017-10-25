@@ -7,9 +7,8 @@ import aiohttp_cors
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../"))
 
-from crawler import init_discuz
-from common import dd, get_config
-from repository import persist_video, persist_video_source, VideoSource
+import app
+import repository
 
 # from playhouse.flask_utils import PaginatedQuery
 # Add the directory containing your module to the Python path (wants absolute paths)

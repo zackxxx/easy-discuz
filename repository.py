@@ -1,42 +1,12 @@
-from peewee import *
-from common import dd, get_config
+import app
 from peewee import *
 import datetime
-import os
 import json
 
 
-def init_db():
-    driver = get_config('DATABASE', 'driver')
-    host = get_config(driver, 'host')
-    username = get_config(driver, 'username')
-    password = get_config(driver, 'password')
-    database = get_config(driver, 'database')
-    port = int(get_config(driver, 'port'))
-
-    if driver == 'POSTGRESQL':
-        db = PostgresqlDatabase(database, user=username, host=host, password=password)
-    elif driver == 'SQLITE':
-        from playhouse.sqlite_ext import SqliteExtDatabase
-        db = SqliteExtDatabase(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data/database.db'))
-    elif driver == 'MYSQL':
-        db = MySQLDatabase(database, user=username, host=host, password=password, port=port)
-    else:
-        raise NotSupportedError
-    return db
-
-
-db = init_db()
-
-
 class BaseModel(Model):
     class Meta:
-        database = db
-
-
-class BaseModel(Model):
-    class Meta:
-        database = db
+        database = app.init_db()
 
     @classmethod
     def get_or_none(cls, **kwargs):
@@ -100,15 +70,11 @@ class Post(BaseModel):
         return 'post_id'
 
 
-Post.create_table(True)
-
-
 class PostRepo(object):
-    
     @staticmethod
     def get_need_detail(limit=100, offset=0):
         return Post.select().where(Post.photos >> None).offset(offset).limit(limit)
-    
+
     @staticmethod
     def save_posts(thread_items):
         if not thread_items or len(thread_items) <= 0:
@@ -159,3 +125,6 @@ class PostRepo(object):
                 post.photos = json.dumps([])
                 post.save()
         return post
+
+
+Post.create_table(True)

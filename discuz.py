@@ -1,13 +1,11 @@
 #!/usr/bin/env python2
 # vim: set fileencoding=utf8
 
-from __future__ import unicode_literals
 import re
 import asyncio
 from bs4 import BeautifulSoup
-import common
+import app
 from httpcommon import HttpCommon
-import repository
 
 
 class Discuz(object):
@@ -22,7 +20,7 @@ class Discuz(object):
                 'normalthread_(?P<post_id>[\w\W]*?)">([\w\W]*?)<span id="thread_([\w\W]*?)"><a([\w\W]*?)">(?P<title>[\w\W]*?)</a>([\w\W]*?)uid=([\w\W]*?)">(?P<author_name>[\w\W]*?)</a>([\w\W]*?)<em>(?P<post_time>[\w\W]*?)</em>'),
             'photo': re.compile('file="attachments/([\w\W]*?)"')
         }
-        self.base_url = common.get_config('DISCUZ', 'base_url')
+        self.base_url = app.get_config('DISCUZ', 'base_url')
         self.urls = {
             'base': self.base_url,
             'board': self.base_url + 'forumdisplay.php',
@@ -117,21 +115,3 @@ class Discuz(object):
                 'post_id': post_id,
                 'succeed': False
             }
-
-    def get_posts_list(self, fid, start_page, end_page, filter='digest', orderby='dateline'):
-        print('分类 {}, {} 页 到 {} 页'.format(fid, start_page, end_page))
-        posts_need_detail = common.run_futures(
-            [self.request_thread(fid, page, filter, orderby) for page in range(start_page, end_page + 1)],
-            repository.PostRepo.save_posts)
-
-        return posts_need_detail
-
-    def get_posts(self, posts):
-        if posts is not None:
-            details = common.run_futures([self.request_post(post['post_id']) for post in posts],
-                                         repository.PostRepo.save_post_detail)
-            return details
-
-    def get_post(self, tid):
-        detail = common.run_futures([self.request_post(tid)], repository.PostRepo.save_post_detail)
-        return detail
