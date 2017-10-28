@@ -1,6 +1,6 @@
 import logging
 from logging.config import dictConfig
-
+import os
 logging_config = dict(
     version=1,
     disable_existing_loggers=False,
@@ -13,19 +13,19 @@ logging_config = dict(
         'debug_file_handler': {
             'class': 'logging.FileHandler',
             'formatter': 'f',
-            'filename': 'logs/debug.log',
+            'filename': os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs', 'debug.log')),
             'level': logging.DEBUG
         },
         'info_file_handler': {
             'class': 'logging.FileHandler',
             'formatter': 'f',
-            'filename': 'logs/info.log',
+            'filename': os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs', 'info.log')),
             'level': logging.INFO
         },
         'err_file_handler': {
             'class': 'logging.FileHandler',
             'formatter': 'f',
-            'filename': 'logs/error.log',
+            'filename': os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'logs', 'error.log')),
             'level': logging.ERROR
         },
     },

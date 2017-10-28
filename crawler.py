@@ -24,7 +24,7 @@ class DiscuzCrawler(object):
             threads_posts = self.get_posts_list(*fid_info)
             if with_detail:
                 for posts in threads_posts:
-                    self.discuz.get_posts(posts)
+                    self.get_posts(posts)
 
     def update_detail_from_database(self, fid=None):
         step = 100
