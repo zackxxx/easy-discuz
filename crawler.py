@@ -32,7 +32,7 @@ class DiscuzCrawler(object):
         while True:
             posts = repository.PostRepo.get_need_detail(step, 0, fid)
             if posts.count() == 0:
-                app.logger().info('noting to update !')
+                app.logger(__name__).info('noting to update !')
                 break
             self.get_posts(posts)
             app.logger(__name__).info([post['post_id'] for post in posts])
