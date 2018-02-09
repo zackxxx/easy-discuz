@@ -9,9 +9,6 @@ import sys
 import config.log
 
 
-
-
-
 class Error(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -27,12 +24,12 @@ def dd(content):
 
 
 def get_config(*config_key):
-    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config.ini')
     config = configparser.ConfigParser()
     config.read(config_path)
     if len(config_key) > 1:
         return config.get(*config_key)
-    return config[config_key[0]]
+    return dict(config.items(config_key[0]))
 
 
 def trans_lists_to_dict(l):
@@ -53,7 +50,7 @@ async def futures(todo, handler=None, handler_args=None):
                 res = handler(res, *handler_args)
             else:
                 res = handler(res)
-            results.append(res)
+        results.append(res)
     return results
 
 

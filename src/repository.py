@@ -1,4 +1,4 @@
-import app
+from library import helper
 from peewee import *
 import datetime
 import json
@@ -6,7 +6,7 @@ import json
 
 class BaseModel(Model):
     class Meta:
-        database = app.init_db()
+        database = helper.init_db()
 
     @classmethod
     def get_or_none(cls, **kwargs):
@@ -73,7 +73,30 @@ class Post(BaseModel):
         return 'post_id'
 
 
+class Config(BaseModel):
+    key = CharField(null=True, unique=True)
+    value = TextField(null=True, default='')
+
+
+class ConfigRepo(object):
+    @staticmethod
+    def get_value(key):
+        config = Config.get_or_none(key=key)
+        if config:
+            return config.value
+        return None
+
+
 class PostRepo(object):
+
+    @staticmethod
+    # 3：无需备份
+    # 2：失败
+    # 1：成功
+    # 0：未处理
+    def set_post_download(post_id, status):
+        Post.update(downloaded=status).where(Post.post_id == post_id).execute()
+
     @staticmethod
     def get_need_detail(limit=100, offset=0, fid=None):
         query = Post.select().where(Post.photos >> None)
@@ -149,3 +172,4 @@ class PostRepo(object):
 
 
 Post.create_table(True)
+Config.create_table(True)

@@ -59,12 +59,12 @@ class HttpCommon:
         }
 
     @classmethod
-    async def http_get(cls, url, params=None, headers=None, cookies=None, encoding=None):
+    async def get(cls, url, params=None, headers=None, cookies=None, encoding=None):
         return await cls._request(cls, url, method='get', params=params, headers=headers, cookies=cookies,
                                   encoding=encoding, debug=False)
 
     @classmethod
-    async def http_post(cls, url, params=None, headers=None, cookies=None, encoding=None):
+    async def post(cls, url, params=None, headers=None, cookies=None, encoding=None):
         return await cls._request(cls, url, method='post', params=params, headers=headers, cookies=cookies,
                                   encoding=encoding, debug=False)
 
